@@ -3,6 +3,7 @@ package com.sw.provisioner;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -172,9 +173,7 @@ public class AccountAction {
 	 *      <loginPriKey>1234\nfg\nsdfs\n</loginPriKey>
 	 *  </configure>
 	 *  
-	 *  valid domain names are only:
-	 *  Virginia, Ohio, California, Oregon, Ireland, Frankfurt, Tokyo, Seoul, Singapore, Sydney
-	 *  Mumbai, SanPaulo 
+	 * It's important to know that the field of geniKey is in binary format
 	 */
 	@Path("/configure/geni")
 	@POST
@@ -199,9 +198,21 @@ public class AccountAction {
 			Element keyElt = rootElt.element("geniKey");
 			String key = keyElt.getText();
 			String geniKeyPath = userDir+"certs/ExoGENIcerts/user.jks";
-			FileWriter keyFw = new FileWriter(geniKeyPath, false);
-			keyFw.write(CommonTool.rephaseString(key));
-			keyFw.close();
+			//FileWriter keyFw = new FileWriter(geniKeyPath, false);
+			FileOutputStream keyStream = new FileOutputStream(geniKeyPath, false);
+			String[] ints = key.split(" ");
+			byte [] content = new byte[ints.length];
+			for(int i = 0 ; i<ints.length ; i++){
+				int num = Integer.valueOf(ints[i]);
+				if(num<128)
+					content[i] = Byte.valueOf(ints[i]);
+				if(num>=128){
+					String nums = num-256+"";
+					content[i] = Byte.valueOf(nums);
+				}
+			}
+			keyStream.write(content);;
+			keyStream.close();
 			
 			Element pubKeyElt = rootElt.element("loginPubKey");
 			String pubKey = pubKeyElt.getText();
@@ -217,6 +228,13 @@ public class AccountAction {
 			priKeyFw.write(CommonTool.rephaseString(priKey));
 			priKeyFw.close();
 			
+			try {
+				Process p = Runtime.getRuntime().exec("chmod 400 "+pubKeyPath+" "+priKeyPath);
+				p.waitFor();
+			} catch (IOException | InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} 
 
 			Element keyAliasElt = rootElt.element("geniKeyAlias");
 			String keyAlias = keyAliasElt.getTextTrim();

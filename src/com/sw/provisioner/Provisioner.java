@@ -128,21 +128,23 @@ public class Provisioner {
 			String keyFilePath = fileDir+keyName;
 			
 			File file = new File(fileDir);
-	        String[] ls = file.list();
-	        for(int i = 0 ; i<ls.length ; i++){
-	        	if(ls[i].contains(".")){
-	        		String [] fileTypes = ls[i].split("\\.");
-		        	if(fileTypes.length > 0){
-			        	int lastIndex = fileTypes.length-1;
-			        	String fileType = fileTypes[lastIndex];
-			        	if(fileType.equals("yml")){
-			        		String toscaFile = fileDir+ls[i];
-			        		changeKeyFilePath(toscaFile, keyFilePath);
-			        	}
-	        		}
-	        	}
-	        	
-	        }
+			if(file.exists()){
+		        String[] ls = file.list();
+		        for(int i = 0 ; i<ls.length ; i++){
+		        	if(ls[i].contains(".")){
+		        		String [] fileTypes = ls[i].split("\\.");
+			        	if(fileTypes.length > 0){
+				        	int lastIndex = fileTypes.length-1;
+				        	String fileType = fileTypes[lastIndex];
+				        	if(fileType.equals("yml")){
+				        		String toscaFile = fileDir+ls[i];
+				        		changeKeyFilePath(toscaFile, keyFilePath);
+				        	}
+		        		}
+		        	}
+		        }
+			}else
+				return "Fail: The action number "+action+" for user "+user+"is wrong!";
 			
 			FileWriter keyFile = new FileWriter(keyFilePath);
 			keyFile.write(CommonTool.rephaseString(keyContent));
@@ -195,21 +197,24 @@ public class Provisioner {
 			
 			String fileDir = CommonTool.generateRootDir()+"users/"+user+"/files/"+action+"/";
 			File file = new File(fileDir);
-	        String[] ls = file.list();
-	        for(int i = 0 ; i<ls.length ; i++){
-	        	if(ls[i].contains(".")){
-	        		String [] fileTypes = ls[i].split("\\.");
-		        	if(fileTypes.length > 0){
-			        	int lastIndex = fileTypes.length-1;
-			        	String fileType = fileTypes[lastIndex];
-			        	if(fileType.equals("yml")){
-			        		String toscaFile = fileDir+ls[i];
-			        		changeGUIScriptFilePath(toscaFile, scriptPath);
-			        	}
-	        		}
-	        	}
-	        	
-	        }
+			if(file.exists()){
+		        String[] ls = file.list();
+		        for(int i = 0 ; i<ls.length ; i++){
+		        	if(ls[i].contains(".")){
+		        		String [] fileTypes = ls[i].split("\\.");
+			        	if(fileTypes.length > 0){
+				        	int lastIndex = fileTypes.length-1;
+				        	String fileType = fileTypes[lastIndex];
+				        	if(fileType.equals("yml")){
+				        		String toscaFile = fileDir+ls[i];
+				        		changeGUIScriptFilePath(toscaFile, scriptPath);
+				        	}
+		        		}
+		        	}
+		        }
+			}else
+				return "Fail: The action number "+action+" for user "+user+"is wrong!";
+				
 			FileWriter scriptFile = new FileWriter(scriptPath);
 			scriptFile.write(CommonTool.rephaseString(fileContent));
 			scriptFile.close();
@@ -355,28 +360,40 @@ public class Provisioner {
 				return sw.toString();
 		}
 		
-		statusElt.setText("Success");
-		infoElt.setText("Provisioning is executed! Action number: "+action);
 		File file = new File(fileDir);
         String[] ls = file.list();
+        boolean provisioned = false;
         for(int i = 0 ; i<ls.length ; i++){
         	if(ls[i].contains("_provisioned.yml")){
-        		String fileString = CommonTool.getContentFromFile(fileDir+ls[i]);
-        		Element fileElt = rDocRootElt.addElement("file");
-        		fileElt.setText(fileString);
+        		provisioned = true;
+        		break;
         	}
         }
-	    xw = new XMLWriter(sw);
-	    try {
-			xw.write(rDoc);
-			xw.close();    
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	    
-		//return "Success: Provisioning is executed! Action number: "+action;
-		return sw.toString();
+		
+        if(provisioned){
+        	statusElt.setText("Success");
+    		infoElt.setText("Provisioning is executed! Action number: "+action);
+            for(int i = 0 ; i<ls.length ; i++){
+            	if(ls[i].contains("_provisioned.yml")){
+            		String fileString = CommonTool.getContentFromFile(fileDir+ls[i]);
+            		Element fileElt = rDocRootElt.addElement("file");
+            		fileElt.setText(fileString);
+            	}
+            }
+    	    xw = new XMLWriter(sw);
+    	    try {
+    			xw.write(rDoc);
+    			xw.close();    
+    		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+    	    
+    		//return "Success: Provisioning is executed! Action number: "+action;
+    		return sw.toString();
+        }else
+        	return "FAIL: Nothing is provisioned! Error happens during provisioning!";
+		
 	}
 	
 	
